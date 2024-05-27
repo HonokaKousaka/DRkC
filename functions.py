@@ -1,6 +1,5 @@
 import numpy as np
 import random
-import time as time
 
 def distancePS(centerSet: np.ndarray, i: int, complete: np.ndarray) -> float:
     """
@@ -96,9 +95,9 @@ def half_deletion(z: int, complete: np.ndarray) -> np.ndarray:
         deletion_points (np.ndarray): A numpy array with z indexes
     """
     amount = complete.shape[0]
-    full_array = np.arange(amount)
-    deletion_points = GMM(full_array, z, complete)
-    deleted_points = np.setdiff1d(full_array, deletion_points)
+    complete_array = np.arange(amount)
+    deletion_points = GMM(complete_array, z, complete)
+    deleted_points = np.setdiff1d(complete_array, deletion_points)
 
     return deleted_points, deletion_points
 
@@ -120,7 +119,7 @@ def k_NN(number_neighbors: int, points_index: np.ndarray, query_point: int, comp
 
     return nearest_indices
 
-def full_deletion(coreSet: np.ndarray, z: int, complete: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def complete_deletion(coreSet: np.ndarray, z: int, complete: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """
     Returns the left indexes and the deleted indexes after deleting z clustered points.
     Args: 
@@ -140,8 +139,8 @@ def full_deletion(coreSet: np.ndarray, z: int, complete: np.ndarray) -> tuple[np
     query_point = random.choice(numpy_coreSet)
     nearest_indices = k_NN(z, numpy_coreSet, query_point, complete)
     deletion_coreSet = numpy_coreSet[nearest_indices]
-    full_array = np.arange(amount)
-    deleted_points = np.setdiff1d(full_array, deletion_coreSet)
+    complete_array = np.arange(amount)
+    deleted_points = np.setdiff1d(complete_array, deletion_coreSet)
     
     return deleted_points, deletion_coreSet
 
@@ -162,8 +161,8 @@ def loss_max_deletion(coreSet: np.ndarray, z: int, complete: np.ndarray) -> tupl
         set_coreSet = set_coreSet | each
     list_coreSet = list(set_coreSet)
     numpy_coreSet = np.array(list_coreSet)
-    full_array = np.arange(amount)
-    rest_points = np.setdiff1d(full_array, numpy_coreSet)
+    complete_array = np.arange(amount)
+    rest_points = np.setdiff1d(complete_array, numpy_coreSet)
     deletion_coreSet = []
     for i in range(z):
         deleted_point = None
@@ -177,7 +176,7 @@ def loss_max_deletion(coreSet: np.ndarray, z: int, complete: np.ndarray) -> tupl
         indices = np.where(numpy_coreSet == deleted_point)[0]
         numpy_coreSet = np.delete(numpy_coreSet, indices)
     deletion_coreSet = np.array(deletion_coreSet)
-    deleted_points = np.setdiff1d(full_array, deletion_coreSet)
+    deleted_points = np.setdiff1d(complete_array, deletion_coreSet)
     
     return deleted_points, deletion_coreSet
 
@@ -367,234 +366,11 @@ def a_neighbor_k_center(complete: np.ndarray,
     if len(centers) < k:
         amount = complete.shape[0]
         numpy_centers = np.array(centers)
-        full_array = np.arange(amount)
-        rest_points = np.setdiff1d(full_array, numpy_centers)
+        complete_array = np.arange(amount)
+        rest_points = np.setdiff1d(complete_array, numpy_centers)
         random_integers = random.sample(range(len(rest_points)), k - len(centers))
         for integer in random_integers:
             centers.append(rest_points[integer])
     centers = np.array(centers)
 
     return centers
-
-## Full-knowledge Deletion
-def full_compare_robust(points_index: np.ndarray, complete: np.ndarray) -> tuple[np.ndarray, float, np.ndarray]:
-    """
-    Returns the ratio of the loss caused by our algorithm to the optimal loss after complete-knowledge deletion. 
-    (k, z) = (10, 10), (5, 20) or (20, 5).
-    Args: 
-        points_index (np.ndarray): The indexes of data
-        complete (np.ndarray): The adjacency matrix of n points
-    Returns:
-        ratios (np.ndarray): A numpy array with ratios
-        spent_time (float): The time spent on running algorithms
-        size_coreset_array (np.ndarray): A numpy array with coreset size in different cases
-    """
-    ratios = []
-    size_coreset_array = []
-    k_rounds = [10, 5, 20]
-    z_rounds = [10, 20, 5]
-    start_time = time.time()
-    for round in range(3):
-        ratio = 0
-        k = k_rounds[round]
-        z = z_rounds[round]
-        for i in range(10):
-            random.seed(i)
-            points_gmm = GMM(points_index, k, complete)
-            points_coreset, points_coreset_center_mark, size_coreset = coreset_generate(points_index, points_gmm, z, complete)
-            size_coreset_array.append(size_coreset)
-            random.seed(16*i+7)
-            points_left_points, points_deleted_points = full_deletion(points_coreset, z, complete)
-            loss_best = float("inf")
-            for d in range(10):
-                random.seed(7*d*d+6*d+12)
-                best_answers = GMM(points_left_points, k, complete)
-                loss_temp = loss(best_answers, points_left_points, complete)
-                if loss_temp < loss_best:
-                    loss_best = loss_temp
-            random.seed(14*i+9)
-            new_centers = robust_solution(points_coreset, points_coreset_center_mark, points_deleted_points, k)
-            loss_new = loss(new_centers, points_left_points, complete)
-            ratio = ratio + loss_new / loss_best / 10
-        ratios.append(ratio)
-    end_time = time.time()
-    spent_time = end_time - start_time
-    ratios = np.array(ratios)
-    size_coreset_array = np.array(size_coreset_array)
-
-    return ratios, spent_time, size_coreset_array
-
-def full_compare_GMM(points_index: np.ndarray, complete: np.ndarray) -> tuple[np.ndarray, float]:
-    """
-    Returns the ratio of the loss caused by GMM to the optimal loss after complete-knowledge deletion.
-    (k, z) = (10, 10), (5, 20) or (20, 5).
-    Args: 
-        points_index (np.ndarray): The indexes of data
-        complete (np.ndarray): The adjacency matrix of n points
-    Returns:
-        ratios (np.ndarray): A numpy array with ratios
-        spent_time (float): The time spent on running algorithms
-    """
-    k_z_ratios = []
-    k_rounds = [10, 5, 20]
-    z_rounds = [10, 20, 5]
-    start_time = time.time()
-    for round in range(3):
-        ratio = 0
-        k = k_rounds[round]
-        z = z_rounds[round]
-        for i in range(10):
-            random.seed(i)
-            points_gmm = GMM(points_index, k + z, complete)
-            points_gmm_array = np.array([set(points_gmm)])
-            random.seed(16*i+7)
-            points_left_points, points_deleted_points = full_deletion(points_gmm_array, z, complete)
-            loss_best = float("inf")
-            for d in range(10):
-                random.seed(7*d*d+6*d+12)
-                best_answers = GMM(points_left_points, k, complete)
-                loss_temp = loss(best_answers, points_left_points, complete)
-                if loss_temp < loss_best:
-                    loss_best = loss_temp
-            new_centers = np.array(list(set(points_gmm) - set(points_deleted_points)))
-            loss_new = loss(new_centers, points_left_points, complete)
-            ratio = ratio + loss_new / loss_best / 10
-        k_z_ratios.append(ratio)
-    end_time = time.time()
-    spent_time = end_time - start_time
-    k_z_ratios = np.array(k_z_ratios)
-
-    return k_z_ratios, spent_time
-
-def full_compare_fault(a: int, complete: np.ndarray, edges: np.ndarray) -> tuple[np.ndarray, float]:
-    """
-    Returns the ratio of the loss caused by Fault Tolerant algorithm to the optimal loss after complete-knowledge deletion.
-    (k, z) = (10, 10), (5, 20) or (20, 5).
-    Args: 
-        a (int): A decimal integer in a_neighbor k-center algorithm
-        complete (np.ndarray): The adjacency matrix of n points
-        edges (np.ndarray): The numpy array of edges
-    Returns:
-        ratios (np.ndarray): A numpy array with ratios
-        spent_time (float): The time spent on running algorithms
-    """
-    fault_ratios = []
-    k_rounds = [10, 5, 20]
-    z_rounds = [10, 20, 5]
-    start_time = time.time()
-    for round in range(3):
-        ratio = 0
-        k = k_rounds[round]
-        z = z_rounds[round]
-        random.seed(z)
-        centers = a_neighbor_k_center(complete, edges, a, k+z)
-        points_centers_array = np.array([set(centers)])
-        random.seed(16*z+7)
-        points_left_points, points_deleted_points = full_deletion(points_centers_array, z, complete)
-        loss_best = float("inf")
-        for d in range(10):
-            random.seed(7*d*d+6*d+12)
-            best_answers = GMM(points_left_points, k, complete)
-            loss_temp = loss(best_answers, points_left_points, complete)
-            if loss_temp < loss_best:
-                loss_best = loss_temp
-        new_centers = np.array(list(set(centers) - set(points_deleted_points)))
-        loss_new = loss(new_centers, points_left_points, complete)
-        ratio = ratio + loss_new / loss_best
-        fault_ratios.append(ratio)
-    end_time = time.time()
-    spent_time = end_time - start_time
-    fault_ratios = np.array(fault_ratios)
-
-    return fault_ratios, spent_time
-
-def main():
-    adult_complete = np.load("dataset/adult_complete.npy")
-    adult_edges = np.load("dataset/adult_edges.npy")
-    CelebA_complete = np.load("dataset/CelebA_complete.npy")
-    CelebA_edges = np.load("dataset/CelebA_edges.npy")
-    Gaussian_blob_complete = np.load("dataset/Gaussian_blob_complete.npy")
-    Gaussian_blob_edges = np.load("dataset/Gaussian_blob_edges.npy")
-    glove_complete = np.load("dataset/glove_complete.npy")
-    glove_edges = np.load("dataset/glove_edges.npy")
-    movielens_complete = np.load("dataset/movielens_complete.npy")
-    movielens_edges = np.load("dataset/movielens_edges.npy")
-
-    ## 1. Full Deletion Implementation
-    index = np.arange(1000)
-    a = 2
-    times = []
-    all_size_coreset = []
-
-    adult_robust, time_temp, size_coreset_array = full_compare_robust(index, adult_complete)
-    np.save("results_1/adult_full_robust.npy", adult_robust)
-    times.append(time_temp)
-    all_size_coreset.append(size_coreset_array)
-
-    adult_gmm, time_temp =(index, adult_complete)
-    np.save("results_1/adult_full_gmm.npy", adult_gmm)
-    times.append(time_temp)
-
-    adult_fault, time_temp = full_compare_fault(a, adult_complete, adult_edges)
-    np.save("results_1/adult_full_fault.npy", adult_fault)
-    times.append(time_temp)
-
-    CelebA_robust, time_temp, size_coreset_array = full_compare_robust(index, CelebA_complete)
-    np.save("results_1/CelebA_full_robust.npy", CelebA_robust)
-    times.append(time_temp)
-    all_size_coreset.append(size_coreset_array)
-
-    CelebA_gmm, time_temp =(index, CelebA_complete)
-    np.save("results_1/CelebA_full_gmm.npy", CelebA_gmm)
-    times.append(time_temp)
-
-    CelebA_fault, time_temp = full_compare_fault(a, CelebA_complete, CelebA_edges)
-    np.save("results_1/CelebA_full_fault.npy", CelebA_fault)
-    times.append(time_temp)
-
-    Gaussian_blob_robust, time_temp, size_coreset_array = full_compare_robust(index, Gaussian_blob_complete)
-    np.save("results_1/Gaussian_blob_full_robust.npy", Gaussian_blob_robust)
-    times.append(time_temp)
-    all_size_coreset.append(size_coreset_array)
-
-    Gaussian_blob_gmm, time_temp =(index, Gaussian_blob_complete)
-    np.save("results_1/Gaussian_blob_full_gmm.npy", Gaussian_blob_gmm)
-    times.append(time_temp)
-
-    Gaussian_blob_fault, time_temp = full_compare_fault(a, Gaussian_blob_complete, Gaussian_blob_edges)
-    np.save("results_1/Gaussian_blob_full_fault.npy", Gaussian_blob_fault)
-    times.append(time_temp)
-
-    glove_robust, time_temp, size_coreset_array = full_compare_robust(index, glove_complete)
-    np.save("results_1/glove_full_robust.npy", glove_robust)
-    times.append(time_temp)
-    all_size_coreset.append(size_coreset_array)
-
-    glove_gmm, time_temp =(index, glove_complete)
-    np.save("results_1/glove_full_gmm.npy", glove_gmm)
-    times.append(time_temp)
-
-    glove_fault, time_temp = full_compare_fault(a, glove_complete, glove_edges)
-    np.save("results_1/glove_full_fault.npy", glove_fault)
-    times.append(time_temp)
-
-    movielens_robust, time_temp, size_coreset_array = full_compare_robust(index, movielens_complete)
-    np.save("results_1/movielens_full_robust.npy", movielens_robust)
-    times.append(time_temp)
-    all_size_coreset.append(size_coreset_array)
-
-    movielens_gmm, time_temp =(index, movielens_complete)
-    np.save("results_1/movielens_full_gmm.npy", movielens_gmm)
-    times.append(time_temp)
-
-    movielens_fault, time_temp = full_compare_fault(a, movielens_complete, movielens_edges)
-    np.save("results_1/movielens_full_fault.npy", movielens_fault)
-    times.append(time_temp)
-
-    times = np.array(times)
-    all_size_coreset = np.array(all_size_coreset)
-    np.save("results_1/time_full_deletion.npy", times)
-    np.save("results_1/size_coreset_full_deletion.npy", all_size_coreset)
-
-if __name__ == "__main__":
-    main()

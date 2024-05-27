@@ -96,9 +96,9 @@ def half_deletion(z: int, complete: np.ndarray) -> np.ndarray:
         deletion_points (np.ndarray): A numpy array with z indexes
     """
     amount = complete.shape[0]
-    full_array = np.arange(amount)
-    deletion_points = GMM(full_array, z, complete)
-    deleted_points = np.setdiff1d(full_array, deletion_points)
+    complete_array = np.arange(amount)
+    deletion_points = GMM(complete_array, z, complete)
+    deleted_points = np.setdiff1d(complete_array, deletion_points)
 
     return deleted_points, deletion_points
 
@@ -120,7 +120,7 @@ def k_NN(number_neighbors: int, points_index: np.ndarray, query_point: int, comp
 
     return nearest_indices
 
-def full_deletion(coreSet: np.ndarray, z: int, complete: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def complete_deletion(coreSet: np.ndarray, z: int, complete: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """
     Returns the left indexes and the deleted indexes after deleting z clustered points.
     Args: 
@@ -140,8 +140,8 @@ def full_deletion(coreSet: np.ndarray, z: int, complete: np.ndarray) -> tuple[np
     query_point = random.choice(numpy_coreSet)
     nearest_indices = k_NN(z, numpy_coreSet, query_point, complete)
     deletion_coreSet = numpy_coreSet[nearest_indices]
-    full_array = np.arange(amount)
-    deleted_points = np.setdiff1d(full_array, deletion_coreSet)
+    complete_array = np.arange(amount)
+    deleted_points = np.setdiff1d(complete_array, deletion_coreSet)
     
     return deleted_points, deletion_coreSet
 
@@ -162,8 +162,8 @@ def loss_max_deletion(coreSet: np.ndarray, z: int, complete: np.ndarray) -> tupl
         set_coreSet = set_coreSet | each
     list_coreSet = list(set_coreSet)
     numpy_coreSet = np.array(list_coreSet)
-    full_array = np.arange(amount)
-    rest_points = np.setdiff1d(full_array, numpy_coreSet)
+    complete_array = np.arange(amount)
+    rest_points = np.setdiff1d(complete_array, numpy_coreSet)
     deletion_coreSet = []
     for i in range(z):
         deleted_point = None
@@ -177,7 +177,7 @@ def loss_max_deletion(coreSet: np.ndarray, z: int, complete: np.ndarray) -> tupl
         indices = np.where(numpy_coreSet == deleted_point)[0]
         numpy_coreSet = np.delete(numpy_coreSet, indices)
     deletion_coreSet = np.array(deletion_coreSet)
-    deleted_points = np.setdiff1d(full_array, deletion_coreSet)
+    deleted_points = np.setdiff1d(complete_array, deletion_coreSet)
     
     return deleted_points, deletion_coreSet
 
@@ -367,8 +367,8 @@ def a_neighbor_k_center(complete: np.ndarray,
     if len(centers) < k:
         amount = complete.shape[0]
         numpy_centers = np.array(centers)
-        full_array = np.arange(amount)
-        rest_points = np.setdiff1d(full_array, numpy_centers)
+        complete_array = np.arange(amount)
+        rest_points = np.setdiff1d(complete_array, numpy_centers)
         random_integers = random.sample(range(len(rest_points)), k - len(centers))
         for integer in random_integers:
             centers.append(rest_points[integer])
@@ -376,7 +376,7 @@ def a_neighbor_k_center(complete: np.ndarray,
 
     return centers
 
-## 5. Fix $k$ Loss-maximizing Deletion
+## 5. Fix k Loss-maximizing Deletion
 def k_lossMax_compare_robust(points_index: np.ndarray, k: int, complete: np.ndarray) -> tuple[np.ndarray, float, np.ndarray]:
     """
     Returns the ratio of the loss caused by our algorithm to the optimal loss after complete-knowledge deletion with k immutable.
