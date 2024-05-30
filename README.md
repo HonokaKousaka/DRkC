@@ -26,12 +26,12 @@ We select some important files for detailed description.
     |-- adult.npy # Adult dataset with 1,000 dataset
     |-- ...
 |-- functions.py # all algorithm functions
-|-- table_complete_deletion.py # Complete-knowledge Deletion for the table in the paper
-|-- table_half_deletion.py # Half-knowledge Deletion for the table in the paper
-|-- table_lossMax_deletion.py #  Loss-maximizing Deletion for the table in the paper
-|-- fix_k_complete_deletion.py # Complete-knowledge Deletion with k fixed
-|-- fix_k_half_deletion.py # Half-knowledge Deletion with k fixed
-|-- fix_k_lossMax_deletion.py # Loss-maximizing Deletion with k fixed
+|-- fix_k_GBGMM.py # GBGMM Deletion with k fixed
+|-- fix_k_WBGreedy.py # WBGreedy Deletion with k fixed
+|-- fix_k_WBNN.py # WBNN Deletion with k fixed
+|-- table_GBGMM.py # GBGMM Deletion for the table in the paper
+|-- table_WBGreedy.py #  WBGreedy Deletion for the table in the paper
+|-- table_WBNN.py # WBNN Deletion for the table in the paper
 ```
 
 ## Run our codes
@@ -43,12 +43,12 @@ If you want to reproduce the results in the paper, you can run our codes in the 
 
 2. You can run our codes like the script in the below: 
 ```python
-python table_complete_deletion.py
-python table_half_deletion.py
-python table_lossMax_deletion.py
-python fix_k_complete_deletion.py
-python fix_k_half_deletion.py
-python fix_k_lossMax_deletion.py
+python fix_k_GBGMM.py
+python fix_k_WBGreedy.py
+python fix_k_WBNN.py
+python table_GBGMM.py
+python table_WBGreedy.py
+python table_WBNN.py
 ```
 
 ## Citation
