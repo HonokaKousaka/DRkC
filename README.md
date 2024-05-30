@@ -51,9 +51,5 @@ python table_WBGreedy.py
 python table_WBNN.py
 ```
 
-## Citation
-
-If you find this code working for you, please cite:
-
 
 
