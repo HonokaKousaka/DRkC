@@ -85,7 +85,7 @@ def loss(centerSet: np.ndarray, points_index: np.ndarray, complete:np.ndarray) -
     
     return max_distance
 
-def half_deletion(z: int, complete: np.ndarray) -> np.ndarray:
+def GB_deletion(z: int, complete: np.ndarray) -> np.ndarray:
     """
     Returns the left indexes and the deleted indexes after z-point deletion with GMM.
     Args: 
@@ -120,7 +120,7 @@ def k_NN(number_neighbors: int, points_index: np.ndarray, query_point: int, comp
 
     return nearest_indices
 
-def complete_deletion(coreSet: np.ndarray, z: int, complete: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def WBNH_deletion(coreSet: np.ndarray, z: int, complete: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """
     Returns the left indexes and the deleted indexes after deleting z clustered points.
     Args: 
@@ -145,9 +145,9 @@ def complete_deletion(coreSet: np.ndarray, z: int, complete: np.ndarray) -> tupl
     
     return deleted_points, deletion_coreSet
 
-def loss_max_deletion(coreSet: np.ndarray, z: int, complete: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def WBGreedy_deletion(coreSet: np.ndarray, z: int, complete: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """
-    Returns the left indexes and the deleted indexes after deleting z points to maximize the loss.
+    Returns the left indexes and the deleted indexes after deleting z points in a greedy way.
     Args: 
         coreSet (np.ndarray): A numpy array as the coreset indexes
         z (int): A decimal integer, the number of deleted points
@@ -376,13 +376,13 @@ def a_neighbor_k_center(complete: np.ndarray,
 
     return centers
 
-## complete-knowledge Deletion
-def complete_compare_robust(points_index: np.ndarray, complete: np.ndarray) -> tuple[np.ndarray, float, np.ndarray]:
+## Fix k WB-Greedy
+def k_Greedy_compare_robust(points_index: np.ndarray, k: int, complete: np.ndarray) -> tuple[np.ndarray, float, np.ndarray]:
     """
-    Returns the ratio of the loss caused by our algorithm to the optimal loss after complete-knowledge deletion. 
-    (k, z) = (10, 10), (5, 20) or (20, 5).
+    Returns the ratio of the loss caused by our algorithm to the optimal loss after WB-Greedy deletion with k immutable.
     Args: 
         points_index (np.ndarray): The indexes of data
+        k (int): A decimal integer, the number of centers
         complete (np.ndarray): The adjacency matrix of n points
     Returns:
         ratios (np.ndarray): A numpy array with ratios
@@ -391,20 +391,15 @@ def complete_compare_robust(points_index: np.ndarray, complete: np.ndarray) -> t
     """
     ratios = []
     size_coreset_array = []
-    k_rounds = [10, 5, 20]
-    z_rounds = [10, 20, 5]
     start_time = time.time()
-    for round in range(3):
+    for z in range(10, 101, 10):
         ratio = 0
-        k = k_rounds[round]
-        z = z_rounds[round]
         for i in range(10):
             random.seed(i)
             points_gmm = GMM(points_index, k, complete)
             points_coreset, points_coreset_center_mark, size_coreset = coreset_generate(points_index, points_gmm, z, complete)
             size_coreset_array.append(size_coreset)
-            random.seed(16*i+7)
-            points_left_points, points_deleted_points = complete_deletion(points_coreset, z, complete)
+            points_left_points, points_deleted_points = WBGreedy_deletion(points_coreset, z, complete)
             loss_best = float("inf")
             for d in range(10):
                 random.seed(7*d*d+6*d+12)
@@ -424,31 +419,26 @@ def complete_compare_robust(points_index: np.ndarray, complete: np.ndarray) -> t
 
     return ratios, spent_time, size_coreset_array
 
-def complete_compare_GMM(points_index: np.ndarray, complete: np.ndarray) -> tuple[np.ndarray, float]:
+def k_Greedy_compare_GMM(points_index: np.ndarray, k: int, complete: np.ndarray) -> tuple[np.ndarray, float]:
     """
-    Returns the ratio of the loss caused by GMM to the optimal loss after complete-knowledge deletion.
-    (k, z) = (10, 10), (5, 20) or (20, 5).
+    Returns the ratio of the loss caused by GMM to the optimal loss after WB-Greedy deletion with k immutable.
     Args: 
         points_index (np.ndarray): The indexes of data
+        k (int): A decimal integer, the number of centers
         complete (np.ndarray): The adjacency matrix of n points
     Returns:
         ratios (np.ndarray): A numpy array with ratios
         spent_time (float): The time spent on running algorithms
     """
     k_z_ratios = []
-    k_rounds = [10, 5, 20]
-    z_rounds = [10, 20, 5]
     start_time = time.time()
-    for round in range(3):
+    for z in range(10, 101, 10):
         ratio = 0
-        k = k_rounds[round]
-        z = z_rounds[round]
         for i in range(10):
             random.seed(i)
             points_gmm = GMM(points_index, k + z, complete)
             points_gmm_array = np.array([set(points_gmm)])
-            random.seed(16*i+7)
-            points_left_points, points_deleted_points = complete_deletion(points_gmm_array, z, complete)
+            points_left_points, points_deleted_points = WBGreedy_deletion(points_gmm_array, z, complete)
             loss_best = float("inf")
             for d in range(10):
                 random.seed(7*d*d+6*d+12)
@@ -466,11 +456,11 @@ def complete_compare_GMM(points_index: np.ndarray, complete: np.ndarray) -> tupl
 
     return k_z_ratios, spent_time
 
-def complete_compare_fault(a: int, complete: np.ndarray, edges: np.ndarray) -> tuple[np.ndarray, float]:
+def k_Greedy_compare_fault(k: int, a: int, complete: np.ndarray, edges: np.ndarray) -> tuple[np.ndarray, float]:
     """
-    Returns the ratio of the loss caused by Fault Tolerant algorithm to the optimal loss after complete-knowledge deletion.
-    (k, z) = (10, 10), (5, 20) or (20, 5).
+    Returns the ratio of the loss caused by Fault Tolerant algorithm to the optimal loss after WB-Greedy deletion with k immutable.
     Args: 
+        k (int): A decimal integer, the number of centers
         a (int): A decimal integer in a_neighbor k-center algorithm
         complete (np.ndarray): The adjacency matrix of n points
         edges (np.ndarray): The numpy array of edges
@@ -479,18 +469,13 @@ def complete_compare_fault(a: int, complete: np.ndarray, edges: np.ndarray) -> t
         spent_time (float): The time spent on running algorithms
     """
     fault_ratios = []
-    k_rounds = [10, 5, 20]
-    z_rounds = [10, 20, 5]
     start_time = time.time()
-    for round in range(3):
-        ratio = 0
-        k = k_rounds[round]
-        z = z_rounds[round]
+    for z in range(10, 101, 10):
         random.seed(z)
+        ratio = 0
         centers = a_neighbor_k_center(complete, edges, a, k+z)
         points_centers_array = np.array([set(centers)])
-        random.seed(16*z+7)
-        points_left_points, points_deleted_points = complete_deletion(points_centers_array, z, complete)
+        points_left_points, points_deleted_points = WBGreedy_deletion(points_centers_array, z, complete)
         loss_best = float("inf")
         for d in range(10):
             random.seed(7*d*d+6*d+12)
@@ -520,81 +505,83 @@ def main():
     movielens_complete = np.load("dataset/movielens_complete.npy")
     movielens_edges = np.load("dataset/movielens_edges.npy")
 
-    ## 1. Complete-knowledge Implementation
+    ## Fix $k$ WB-Greedy Deletion Implementation
+    ## The "lossMax" in the names of files means the deletion is under loss maximizing, namely WB-Greedy
     index = np.arange(1000)
+    k = 10
     a = 2
     times = []
     all_size_coreset = []
 
-    adult_robust, time_temp, size_coreset_array = complete_compare_robust(index, adult_complete)
-    np.save("results_1/adult_complete_robust.npy", adult_robust)
+    adult_robust, time_temp, size_coreset_array = k_Greedy_compare_robust(index, k, adult_complete)
+    np.save("results_2/adult_lossMax_robust.npy", adult_robust)
     times.append(time_temp)
     all_size_coreset.append(size_coreset_array)
 
-    adult_gmm, time_temp =(index, adult_complete)
-    np.save("results_1/adult_complete_gmm.npy", adult_gmm)
+    adult_gmm, time_temp = k_Greedy_compare_GMM(index, k, adult_complete)
+    np.save("results_2/adult_lossMax_gmm.npy", adult_gmm)
     times.append(time_temp)
 
-    adult_fault, time_temp = complete_compare_fault(a, adult_complete, adult_edges)
-    np.save("results_1/adult_complete_fault.npy", adult_fault)
+    adult_fault, time_temp = k_Greedy_compare_fault(k, a, adult_complete, adult_edges)
+    np.save("results_2/adult_lossMax_fault.npy", adult_fault)
     times.append(time_temp)
 
-    CelebA_robust, time_temp, size_coreset_array = complete_compare_robust(index, CelebA_complete)
-    np.save("results_1/CelebA_complete_robust.npy", CelebA_robust)
-    times.append(time_temp)
-    all_size_coreset.append(size_coreset_array)
-
-    CelebA_gmm, time_temp =(index, CelebA_complete)
-    np.save("results_1/CelebA_complete_gmm.npy", CelebA_gmm)
-    times.append(time_temp)
-
-    CelebA_fault, time_temp = complete_compare_fault(a, CelebA_complete, CelebA_edges)
-    np.save("results_1/CelebA_complete_fault.npy", CelebA_fault)
-    times.append(time_temp)
-
-    Gaussian_blob_robust, time_temp, size_coreset_array = complete_compare_robust(index, Gaussian_blob_complete)
-    np.save("results_1/Gaussian_blob_complete_robust.npy", Gaussian_blob_robust)
+    CelebA_robust, time_temp, size_coreset_array = k_Greedy_compare_robust(index, k, CelebA_complete)
+    np.save("results_2/CelebA_lossMax_robust.npy", CelebA_robust)
     times.append(time_temp)
     all_size_coreset.append(size_coreset_array)
 
-    Gaussian_blob_gmm, time_temp =(index, Gaussian_blob_complete)
-    np.save("results_1/Gaussian_blob_complete_gmm.npy", Gaussian_blob_gmm)
+    CelebA_gmm, time_temp = k_Greedy_compare_GMM(index, k, CelebA_complete)
+    np.save("results_2/CelebA_lossMax_gmm.npy", CelebA_gmm)
     times.append(time_temp)
 
-    Gaussian_blob_fault, time_temp = complete_compare_fault(a, Gaussian_blob_complete, Gaussian_blob_edges)
-    np.save("results_1/Gaussian_blob_complete_fault.npy", Gaussian_blob_fault)
+    CelebA_fault, time_temp = k_Greedy_compare_fault(k, a, CelebA_complete, CelebA_edges)
+    np.save("results_2/CelebA_lossMax_fault.npy", CelebA_fault)
     times.append(time_temp)
 
-    glove_robust, time_temp, size_coreset_array = complete_compare_robust(index, glove_complete)
-    np.save("results_1/glove_complete_robust.npy", glove_robust)
-    times.append(time_temp)
-    all_size_coreset.append(size_coreset_array)
-
-    glove_gmm, time_temp =(index, glove_complete)
-    np.save("results_1/glove_complete_gmm.npy", glove_gmm)
-    times.append(time_temp)
-
-    glove_fault, time_temp = complete_compare_fault(a, glove_complete, glove_edges)
-    np.save("results_1/glove_complete_fault.npy", glove_fault)
-    times.append(time_temp)
-
-    movielens_robust, time_temp, size_coreset_array = complete_compare_robust(index, movielens_complete)
-    np.save("results_1/movielens_complete_robust.npy", movielens_robust)
+    Gaussian_blob_robust, time_temp, size_coreset_array = k_Greedy_compare_robust(index, k, Gaussian_blob_complete)
+    np.save("results_2/Gaussian_blob_lossMax_robust.npy", Gaussian_blob_robust)
     times.append(time_temp)
     all_size_coreset.append(size_coreset_array)
 
-    movielens_gmm, time_temp =(index, movielens_complete)
-    np.save("results_1/movielens_complete_gmm.npy", movielens_gmm)
+    Gaussian_blob_gmm, time_temp = k_Greedy_compare_GMM(index, k, Gaussian_blob_complete)
+    np.save("results_2/Gaussian_blob_lossMax_gmm.npy", Gaussian_blob_gmm)
     times.append(time_temp)
 
-    movielens_fault, time_temp = complete_compare_fault(a, movielens_complete, movielens_edges)
-    np.save("results_1/movielens_complete_fault.npy", movielens_fault)
+    Gaussian_blob_fault, time_temp = k_Greedy_compare_fault(k, a, Gaussian_blob_complete, Gaussian_blob_edges)
+    np.save("results_2/Gaussian_blob_lossMax_fault.npy", Gaussian_blob_fault)
+    times.append(time_temp)
+
+    glove_robust, time_temp, size_coreset_array = k_Greedy_compare_robust(index, k, glove_complete)
+    np.save("results_2/glove_lossMax_robust.npy", glove_robust)
+    times.append(time_temp)
+    all_size_coreset.append(size_coreset_array)
+
+    glove_gmm, time_temp = k_Greedy_compare_GMM(index, k, glove_complete)
+    np.save("results_2/glove_lossMax_gmm.npy", glove_gmm)
+    times.append(time_temp)
+
+    glove_fault, time_temp = k_Greedy_compare_fault(k, a, glove_complete, glove_edges)
+    np.save("results_2/glove_lossMax_fault.npy", glove_fault)
+    times.append(time_temp)
+
+    movielens_robust, time_temp, size_coreset_array = k_Greedy_compare_robust(index, k, movielens_complete)
+    np.save("results_2/movielens_lossMax_robust.npy", movielens_robust)
+    times.append(time_temp)
+    all_size_coreset.append(size_coreset_array)
+
+    movielens_gmm, time_temp = k_Greedy_compare_GMM(index, k, movielens_complete)
+    np.save("results_2/movielens_lossMax_gmm.npy", movielens_gmm)
+    times.append(time_temp)
+
+    movielens_fault, time_temp = k_Greedy_compare_fault(k, a, movielens_complete, movielens_edges)
+    np.save("results_2/movielens_lossMax_fault.npy", movielens_fault)
     times.append(time_temp)
 
     times = np.array(times)
     all_size_coreset = np.array(all_size_coreset)
-    np.save("results_1/time_complete_deletion.npy", times)
-    np.save("results_1/size_coreset_complete_deletion.npy", all_size_coreset)
+    np.save("results_2/time_k_lossMax_deletion.npy", times)
+    np.save("results_2/size_coreset_k_lossMax_deletion.npy", all_size_coreset)
 
 if __name__ == "__main__":
     main()

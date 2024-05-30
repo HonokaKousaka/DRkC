@@ -84,7 +84,7 @@ def loss(centerSet: np.ndarray, points_index: np.ndarray, complete:np.ndarray) -
     
     return max_distance
 
-def half_deletion(z: int, complete: np.ndarray) -> np.ndarray:
+def GB_deletion(z: int, complete: np.ndarray) -> np.ndarray:
     """
     Returns the left indexes and the deleted indexes after z-point deletion with GMM.
     Args: 
@@ -119,7 +119,7 @@ def k_NN(number_neighbors: int, points_index: np.ndarray, query_point: int, comp
 
     return nearest_indices
 
-def complete_deletion(coreSet: np.ndarray, z: int, complete: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def WBNH_deletion(coreSet: np.ndarray, z: int, complete: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """
     Returns the left indexes and the deleted indexes after deleting z clustered points.
     Args: 
@@ -144,9 +144,9 @@ def complete_deletion(coreSet: np.ndarray, z: int, complete: np.ndarray) -> tupl
     
     return deleted_points, deletion_coreSet
 
-def loss_max_deletion(coreSet: np.ndarray, z: int, complete: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def WBGreedy_deletion(coreSet: np.ndarray, z: int, complete: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """
-    Returns the left indexes and the deleted indexes after deleting z points to maximize the loss.
+    Returns the left indexes and the deleted indexes after deleting z points in a greedy way.
     Args: 
         coreSet (np.ndarray): A numpy array as the coreset indexes
         z (int): A decimal integer, the number of deleted points
