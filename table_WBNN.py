@@ -120,7 +120,7 @@ def k_NN(number_neighbors: int, points_index: np.ndarray, query_point: int, comp
 
     return nearest_indices
 
-def WBNH_deletion(coreSet: np.ndarray, z: int, complete: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def WBNN_deletion(coreSet: np.ndarray, z: int, complete: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """
     Returns the left indexes and the deleted indexes after deleting z clustered points.
     Args: 
@@ -376,10 +376,10 @@ def a_neighbor_k_center(complete: np.ndarray,
 
     return centers
 
-## WB-NH
-def WBNH_compare_robust(points_index: np.ndarray, complete: np.ndarray) -> tuple[np.ndarray, float, np.ndarray]:
+## WB-NN
+def WBNN_compare_robust(points_index: np.ndarray, complete: np.ndarray) -> tuple[np.ndarray, float, np.ndarray]:
     """
-    Returns the ratio of the loss caused by our algorithm to the optimal loss after WBNH deletion. 
+    Returns the ratio of the loss caused by our algorithm to the optimal loss after WBNN deletion. 
     (k, z) = (10, 10), (5, 20) or (20, 5).
     Args: 
         points_index (np.ndarray): The indexes of data
@@ -404,7 +404,7 @@ def WBNH_compare_robust(points_index: np.ndarray, complete: np.ndarray) -> tuple
             points_coreset, points_coreset_center_mark, size_coreset = coreset_generate(points_index, points_gmm, z, complete)
             size_coreset_array.append(size_coreset)
             random.seed(16*i+7)
-            points_left_points, points_deleted_points = WBNH_deletion(points_coreset, z, complete)
+            points_left_points, points_deleted_points = WBNN_deletion(points_coreset, z, complete)
             loss_best = float("inf")
             for d in range(10):
                 random.seed(7*d*d+6*d+12)
@@ -424,9 +424,9 @@ def WBNH_compare_robust(points_index: np.ndarray, complete: np.ndarray) -> tuple
 
     return ratios, spent_time, size_coreset_array
 
-def WBNH_compare_GMM(points_index: np.ndarray, complete: np.ndarray) -> tuple[np.ndarray, float]:
+def WBNN_compare_GMM(points_index: np.ndarray, complete: np.ndarray) -> tuple[np.ndarray, float]:
     """
-    Returns the ratio of the loss caused by GMM to the optimal loss after WBNH deletion.
+    Returns the ratio of the loss caused by GMM to the optimal loss after WBNN deletion.
     (k, z) = (10, 10), (5, 20) or (20, 5).
     Args: 
         points_index (np.ndarray): The indexes of data
@@ -448,7 +448,7 @@ def WBNH_compare_GMM(points_index: np.ndarray, complete: np.ndarray) -> tuple[np
             points_gmm = GMM(points_index, k + z, complete)
             points_gmm_array = np.array([set(points_gmm)])
             random.seed(16*i+7)
-            points_left_points, points_deleted_points = WBNH_deletion(points_gmm_array, z, complete)
+            points_left_points, points_deleted_points = WBNN_deletion(points_gmm_array, z, complete)
             loss_best = float("inf")
             for d in range(10):
                 random.seed(7*d*d+6*d+12)
@@ -466,9 +466,9 @@ def WBNH_compare_GMM(points_index: np.ndarray, complete: np.ndarray) -> tuple[np
 
     return k_z_ratios, spent_time
 
-def WBNH_compare_fault(a: int, complete: np.ndarray, edges: np.ndarray) -> tuple[np.ndarray, float]:
+def WBNN_compare_fault(a: int, complete: np.ndarray, edges: np.ndarray) -> tuple[np.ndarray, float]:
     """
-    Returns the ratio of the loss caused by Fault Tolerant algorithm to the optimal loss after WBNH deletion.
+    Returns the ratio of the loss caused by Fault Tolerant algorithm to the optimal loss after WBNN deletion.
     (k, z) = (10, 10), (5, 20) or (20, 5).
     Args: 
         a (int): A decimal integer in a_neighbor k-center algorithm
@@ -490,7 +490,7 @@ def WBNH_compare_fault(a: int, complete: np.ndarray, edges: np.ndarray) -> tuple
         centers = a_neighbor_k_center(complete, edges, a, k+z)
         points_centers_array = np.array([set(centers)])
         random.seed(16*z+7)
-        points_left_points, points_deleted_points = WBNH_deletion(points_centers_array, z, complete)
+        points_left_points, points_deleted_points = WBNN_deletion(points_centers_array, z, complete)
         loss_best = float("inf")
         for d in range(10):
             random.seed(7*d*d+6*d+12)
@@ -520,75 +520,75 @@ def main():
     movielens_complete = np.load("dataset/movielens_complete.npy")
     movielens_edges = np.load("dataset/movielens_edges.npy")
 
-    ## WBNH Implementation
-    ## The "complete" in the names of files means the deletion is under complete knowledge, namely WBNH
+    ## WBNN Implementation
+    ## The "complete" in the names of files means the deletion is under complete knowledge, namely WBNN
     index = np.arange(1000)
     a = 2
     times = []
     all_size_coreset = []
 
-    adult_robust, time_temp, size_coreset_array = WBNH_compare_robust(index, adult_complete)
+    adult_robust, time_temp, size_coreset_array = WBNN_compare_robust(index, adult_complete)
     np.save("results_1/adult_complete_robust.npy", adult_robust)
     times.append(time_temp)
     all_size_coreset.append(size_coreset_array)
 
-    adult_gmm, time_temp = WBNH_compare_GMM(index, adult_complete)
+    adult_gmm, time_temp = WBNN_compare_GMM(index, adult_complete)
     np.save("results_1/adult_complete_gmm.npy", adult_gmm)
     times.append(time_temp)
 
-    adult_fault, time_temp = WBNH_compare_fault(a, adult_complete, adult_edges)
+    adult_fault, time_temp = WBNN_compare_fault(a, adult_complete, adult_edges)
     np.save("results_1/adult_complete_fault.npy", adult_fault)
     times.append(time_temp)
 
-    CelebA_robust, time_temp, size_coreset_array = WBNH_compare_robust(index, CelebA_complete)
+    CelebA_robust, time_temp, size_coreset_array = WBNN_compare_robust(index, CelebA_complete)
     np.save("results_1/CelebA_complete_robust.npy", CelebA_robust)
     times.append(time_temp)
     all_size_coreset.append(size_coreset_array)
 
-    CelebA_gmm, time_temp = WBNH_compare_GMM(index, CelebA_complete)
+    CelebA_gmm, time_temp = WBNN_compare_GMM(index, CelebA_complete)
     np.save("results_1/CelebA_complete_gmm.npy", CelebA_gmm)
     times.append(time_temp)
 
-    CelebA_fault, time_temp = WBNH_compare_fault(a, CelebA_complete, CelebA_edges)
+    CelebA_fault, time_temp = WBNN_compare_fault(a, CelebA_complete, CelebA_edges)
     np.save("results_1/CelebA_complete_fault.npy", CelebA_fault)
     times.append(time_temp)
 
-    Gaussian_blob_robust, time_temp, size_coreset_array = WBNH_compare_robust(index, Gaussian_blob_complete)
+    Gaussian_blob_robust, time_temp, size_coreset_array = WBNN_compare_robust(index, Gaussian_blob_complete)
     np.save("results_1/Gaussian_blob_complete_robust.npy", Gaussian_blob_robust)
     times.append(time_temp)
     all_size_coreset.append(size_coreset_array)
 
-    Gaussian_blob_gmm, time_temp = WBNH_compare_GMM(index, Gaussian_blob_complete)
+    Gaussian_blob_gmm, time_temp = WBNN_compare_GMM(index, Gaussian_blob_complete)
     np.save("results_1/Gaussian_blob_complete_gmm.npy", Gaussian_blob_gmm)
     times.append(time_temp)
 
-    Gaussian_blob_fault, time_temp = WBNH_compare_fault(a, Gaussian_blob_complete, Gaussian_blob_edges)
+    Gaussian_blob_fault, time_temp = WBNN_compare_fault(a, Gaussian_blob_complete, Gaussian_blob_edges)
     np.save("results_1/Gaussian_blob_complete_fault.npy", Gaussian_blob_fault)
     times.append(time_temp)
 
-    glove_robust, time_temp, size_coreset_array = WBNH_compare_robust(index, glove_complete)
+    glove_robust, time_temp, size_coreset_array = WBNN_compare_robust(index, glove_complete)
     np.save("results_1/glove_complete_robust.npy", glove_robust)
     times.append(time_temp)
     all_size_coreset.append(size_coreset_array)
 
-    glove_gmm, time_temp = WBNH_compare_GMM(index, glove_complete)
+    glove_gmm, time_temp = WBNN_compare_GMM(index, glove_complete)
     np.save("results_1/glove_complete_gmm.npy", glove_gmm)
     times.append(time_temp)
 
-    glove_fault, time_temp = WBNH_compare_fault(a, glove_complete, glove_edges)
+    glove_fault, time_temp = WBNN_compare_fault(a, glove_complete, glove_edges)
     np.save("results_1/glove_complete_fault.npy", glove_fault)
     times.append(time_temp)
 
-    movielens_robust, time_temp, size_coreset_array = WBNH_compare_robust(index, movielens_complete)
+    movielens_robust, time_temp, size_coreset_array = WBNN_compare_robust(index, movielens_complete)
     np.save("results_1/movielens_complete_robust.npy", movielens_robust)
     times.append(time_temp)
     all_size_coreset.append(size_coreset_array)
 
-    movielens_gmm, time_temp = WBNH_compare_GMM(index, movielens_complete)
+    movielens_gmm, time_temp = WBNN_compare_GMM(index, movielens_complete)
     np.save("results_1/movielens_complete_gmm.npy", movielens_gmm)
     times.append(time_temp)
 
-    movielens_fault, time_temp = WBNH_compare_fault(a, movielens_complete, movielens_edges)
+    movielens_fault, time_temp = WBNN_compare_fault(a, movielens_complete, movielens_edges)
     np.save("results_1/movielens_complete_fault.npy", movielens_fault)
     times.append(time_temp)
 
