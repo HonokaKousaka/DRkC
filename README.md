@@ -1,6 +1,6 @@
 # Coresets for Deletion-Robust k-Center Clustering
 
-This is the official repository of CIKM 2024 paper *Coresets for Deletion-Robust k-Center Clustering*.
+This is the official repository of the CIKM 2024 paper submission titled *Coresets for Deletion-Robust k-Center Clustering*.
 
 ## Setup
 
@@ -8,7 +8,7 @@ This implementation is based on Python 3. To run the code, you need the followin
 
 - numpy==1.26.4
 
-You can simply run 
+To install the dependencies, you may use pip as follows.
 
 ```python
 pip install -r requirements.txt
@@ -34,14 +34,14 @@ We select some important files for detailed description.
 |-- table_WBNN.py # WBNN Deletion for the table in the paper
 ```
 
-## Run our codes
-You can use the codes in ```functions.py``` if you want to try our algorithm in your own way.
+## Run our code
+You can use the code in ```functions.py``` if you want to try our algorithm in your own way.
 
-If you want to reproduce the results in the paper, you can run our codes in the following steps.
+If you want to reproduce the results in the paper, you can run our code in the following steps.
 
-1. Make sure there are 2 directories named ```results_1``` and ```results_2``` in the same directory that our codes are in.
+1. Make sure there are 2 directories named ```results_1``` and ```results_2``` in the same directory that our code are in.
 
-2. You can run our codes like the script in the below: 
+2. You can run our code as in the script in the below: 
 ```python
 python fix_k_GBGMM.py
 python fix_k_WBGreedy.py
