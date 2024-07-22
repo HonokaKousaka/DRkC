@@ -376,10 +376,10 @@ def a_neighbor_k_center(complete: np.ndarray,
 
     return centers
 
-## Fix k GB-GMM
-def k_GBGMM_compare_robust(points_index: np.ndarray, k: int, complete: np.ndarray) -> tuple[np.ndarray, float, np.ndarray]:
+## Fix k WB-Greedy
+def k_Greedy_compare_robust(points_index: np.ndarray, k: int, complete: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
-    Returns the ratio of the loss caused by our algorithm to the optimal loss after GBGMM deletion with k immutable.
+    Returns the ratio of the loss caused by our algorithm to the optimal loss after WB-Greedy deletion with k immutable.
     Args: 
         points_index (np.ndarray): The indexes of data
         k (int): A decimal integer, the number of centers
@@ -390,17 +390,20 @@ def k_GBGMM_compare_robust(points_index: np.ndarray, k: int, complete: np.ndarra
         size_coreset_array (np.ndarray): A numpy array with coreset size in different cases
     """
     ratios = []
+    time_array = []
     size_coreset_array = []
-    start_time = time.time()
-    for z in range(10, 101, 10):
+    construct_time = 0
+    solution_time = 0
+    for z in range(10, 11, 10):
         ratio = 0
         for i in range(10):
             random.seed(i)
+            start_time_1 = time.time()
             points_gmm = GMM(points_index, k, complete)
             points_coreset, points_coreset_center_mark, size_coreset = coreset_generate(points_index, points_gmm, z, complete)
+            end_time_1 = time.time()
             size_coreset_array.append(size_coreset)
-            random.seed(16*i+7)
-            points_left_points, points_deleted_points = GB_deletion(z, complete)
+            points_left_points, points_deleted_points = WBGreedy_deletion(points_coreset, z, complete)
             loss_best = float("inf")
             for d in range(10):
                 random.seed(7*d*d+6*d+12)
@@ -408,20 +411,26 @@ def k_GBGMM_compare_robust(points_index: np.ndarray, k: int, complete: np.ndarra
                 loss_temp = loss(best_answers, points_left_points, complete)
                 if loss_temp < loss_best:
                     loss_best = loss_temp
+            random.seed(14*i+9)
+            start_time_2 = time.time()
             new_centers = robust_solution(points_coreset, points_coreset_center_mark, points_deleted_points, k)
+            end_time_2 = time.time()
             loss_new = loss(new_centers, points_left_points, complete)
             ratio = ratio + loss_new / loss_best / 10
+            construct_time += (end_time_1 - start_time_1) / 10
+            solution_time += (end_time_2 - start_time_2) / 10
         ratios.append(ratio)
-    end_time = time.time()
-    spent_time = end_time - start_time
     ratios = np.array(ratios)
+    time_array.append(construct_time)
+    time_array.append(solution_time)
+    time_array = np.array(time_array)
     size_coreset_array = np.array(size_coreset_array)
 
-    return ratios, spent_time, size_coreset_array
+    return ratios, time_array, size_coreset_array
 
-def k_GBGMM_compare_GMM(points_index: np.ndarray, k: int, complete: np.ndarray) -> tuple[np.ndarray, float]:
+def k_Greedy_compare_GMM(points_index: np.ndarray, k: int, complete: np.ndarray) -> tuple[np.ndarray, float]:
     """
-    Returns the ratio of the loss caused by GMM to the optimal loss after GBGMM deletion with k immutable.
+    Returns the ratio of the loss caused by GMM to the optimal loss after WB-Greedy deletion with k immutable.
     Args: 
         points_index (np.ndarray): The indexes of data
         k (int): A decimal integer, the number of centers
@@ -431,14 +440,16 @@ def k_GBGMM_compare_GMM(points_index: np.ndarray, k: int, complete: np.ndarray) 
         spent_time (float): The time spent on running algorithms
     """
     k_z_ratios = []
-    start_time = time.time()
-    for z in range(10, 101, 10):
+    spent_time = 0
+    for z in range(10, 11, 10):
         ratio = 0
         for i in range(10):
             random.seed(i)
+            start_time = time.time()
             points_gmm = GMM(points_index, k + z, complete)
-            random.seed(16*i+7)
-            points_left_points, points_deleted_points = GB_deletion(z, complete)
+            end_time = time.time()
+            points_gmm_array = np.array([set(points_gmm)])
+            points_left_points, points_deleted_points = WBGreedy_deletion(points_gmm_array, z, complete)
             loss_best = float("inf")
             for d in range(10):
                 random.seed(7*d*d+6*d+12)
@@ -446,21 +457,18 @@ def k_GBGMM_compare_GMM(points_index: np.ndarray, k: int, complete: np.ndarray) 
                 loss_temp = loss(best_answers, points_left_points, complete)
                 if loss_temp < loss_best:
                     loss_best = loss_temp
-            left_centers = np.array(list(set(points_gmm) - set(points_deleted_points)))
-            random.seed(9*i*i+5*i+21)
-            new_centers = GMM(left_centers, k, complete)
+            new_centers = np.array(list(set(points_gmm) - set(points_deleted_points)))
             loss_new = loss(new_centers, points_left_points, complete)
             ratio = ratio + loss_new / loss_best / 10
+            spent_time += (end_time - start_time) / 10
         k_z_ratios.append(ratio)
-    end_time = time.time()
-    spent_time = end_time - start_time
     k_z_ratios = np.array(k_z_ratios)
 
     return k_z_ratios, spent_time
 
-def k_GBGMM_compare_fault(k: int, a: int, complete: np.ndarray, edges: np.ndarray) -> tuple[np.ndarray, float]:
+def k_Greedy_compare_fault(k: int, a: int, complete: np.ndarray, edges: np.ndarray) -> tuple[np.ndarray, float]:
     """
-    Returns the ratio of the loss caused by Fault Tolerant algorithm to the optimal loss after GBGMM deletion with k immutable.
+    Returns the ratio of the loss caused by Fault Tolerant algorithm to the optimal loss after WB-Greedy deletion with k immutable.
     Args: 
         k (int): A decimal integer, the number of centers
         a (int): A decimal integer in a_neighbor k-center algorithm
@@ -471,13 +479,16 @@ def k_GBGMM_compare_fault(k: int, a: int, complete: np.ndarray, edges: np.ndarra
         spent_time (float): The time spent on running algorithms
     """
     fault_ratios = []
-    start_time = time.time()
-    for z in range(10, 101, 10):
+    start_time = 0
+    end_time = 0
+    for z in range(10, 11, 10):
         random.seed(z)
         ratio = 0
+        start_time = time.time()
         centers = a_neighbor_k_center(complete, edges, a, k+z)
-        random.seed(16*z+7)
-        points_left_points, points_deleted_points = GB_deletion(z, complete)
+        end_time = time.time()
+        points_centers_array = np.array([set(centers)])
+        points_left_points, points_deleted_points = WBGreedy_deletion(points_centers_array, z, complete)
         loss_best = float("inf")
         for d in range(10):
             random.seed(7*d*d+6*d+12)
@@ -485,107 +496,45 @@ def k_GBGMM_compare_fault(k: int, a: int, complete: np.ndarray, edges: np.ndarra
             loss_temp = loss(best_answers, points_left_points, complete)
             if loss_temp < loss_best:
                 loss_best = loss_temp
-        left_centers = np.array(list(set(centers) - set(points_deleted_points)))
-        random.seed(9*z*z+5*z+21)
-        new_centers = GMM(left_centers, k, complete)
+        new_centers = np.array(list(set(centers) - set(points_deleted_points)))
         loss_new = loss(new_centers, points_left_points, complete)
         ratio = ratio + loss_new / loss_best
         fault_ratios.append(ratio)
-    end_time = time.time()
     spent_time = end_time - start_time
     fault_ratios = np.array(fault_ratios)
 
     return fault_ratios, spent_time
 
 def main():
-    adult_complete = np.load("dataset/adult_complete.npy")
-    adult_edges = np.load("dataset/adult_edges.npy")
     CelebA_complete = np.load("dataset/CelebA_complete.npy")
     CelebA_edges = np.load("dataset/CelebA_edges.npy")
-    Gaussian_blob_complete = np.load("dataset/Gaussian_blob_complete.npy")
-    Gaussian_blob_edges = np.load("dataset/Gaussian_blob_edges.npy")
-    glove_complete = np.load("dataset/glove_complete.npy")
-    glove_edges = np.load("dataset/glove_edges.npy")
-    movielens_complete = np.load("dataset/movielens_complete.npy")
-    movielens_edges = np.load("dataset/movielens_edges.npy")
 
-    ## Fix $k$ GBGMM Deletion Implementation
-    ## The "half" in the names of files means the deletion is under half knowledge, namely GBGMM
+    ## Fix $k$ WB-Greedy Deletion Implementation
+    ## The "lossMax" in the names of files means the deletion is under loss maximizing, namely WB-Greedy
     index = np.arange(1000)
     k = 10
     a = 2
     times = []
     all_size_coreset = []
 
-    adult_robust_half, time_temp, size_coreset_array = k_GBGMM_compare_robust(index, k, adult_complete)
-    np.save("results_2/adult_half_robust.npy", adult_robust_half)
-    times.append(time_temp)
+    CelebA_robust, time_temp, size_coreset_array = k_Greedy_compare_robust(index, k, CelebA_complete)
+    np.save("results_2/CelebA_lossMax_robust.npy", CelebA_robust)
+    times.append(time_temp[0])
+    times.append(time_temp[1])
     all_size_coreset.append(size_coreset_array)
 
-    adult_gmm_half, time_temp = k_GBGMM_compare_GMM(index, k, adult_complete)
-    np.save("results_2/adult_half_gmm.npy", adult_gmm_half)
+    CelebA_gmm, time_temp = k_Greedy_compare_GMM(index, k, CelebA_complete)
+    np.save("results_2/CelebA_lossMax_gmm.npy", CelebA_gmm)
     times.append(time_temp)
 
-    adult_fault_half, time_temp = k_GBGMM_compare_fault(k, a, adult_complete, adult_edges)
-    np.save("results_2/adult_half_fault.npy", adult_fault_half)
-    times.append(time_temp)
-
-    CelebA_robust_half, time_temp, size_coreset_array = k_GBGMM_compare_robust(index, k, CelebA_complete)
-    np.save("results_2/CelebA_half_robust.npy", CelebA_robust_half)
-    times.append(time_temp)
-    all_size_coreset.append(size_coreset_array)
-
-    CelebA_gmm_half, time_temp = k_GBGMM_compare_GMM(index, k, CelebA_complete)
-    np.save("results_2/CelebA_half_gmm.npy", CelebA_gmm_half)
-    times.append(time_temp)
-
-    CelebA_fault_half, time_temp = k_GBGMM_compare_fault(k, a, CelebA_complete, CelebA_edges)
-    np.save("results_2/CelebA_half_fault.npy", CelebA_fault_half)
-    times.append(time_temp)
-
-    Gaussian_blob_robust_half, time_temp, size_coreset_array = k_GBGMM_compare_robust(index, k, Gaussian_blob_complete)
-    np.save("results_2/Gaussian_blob_half_robust.npy", Gaussian_blob_robust_half)
-    times.append(time_temp)
-    all_size_coreset.append(size_coreset_array)
-
-    Gaussian_blob_gmm_half, time_temp = k_GBGMM_compare_GMM(index, k, Gaussian_blob_complete)
-    np.save("results_2/Gaussian_blob_half_gmm.npy", Gaussian_blob_gmm_half)
-    times.append(time_temp)
-
-    Gaussian_blob_fault_half, time_temp = k_GBGMM_compare_fault(k, a, Gaussian_blob_complete, Gaussian_blob_edges)
-    np.save("results_2/Gaussian_blob_half_fault.npy", Gaussian_blob_fault_half)
-    times.append(time_temp)
-
-    glove_robust_half, time_temp, size_coreset_array = k_GBGMM_compare_robust(index, k, glove_complete)
-    np.save("results_2/glove_half_robust.npy", glove_robust_half)
-    times.append(time_temp)
-    all_size_coreset.append(size_coreset_array)
-
-    glove_gmm_half, time_temp = k_GBGMM_compare_GMM(index, k, glove_complete)
-    np.save("results_2/glove_half_gmm.npy", glove_gmm_half)
-    times.append(time_temp)
-
-    glove_fault_half, time_temp = k_GBGMM_compare_fault(k, a, glove_complete, glove_edges)
-    np.save("results_2/glove_half_fault.npy", glove_fault_half)
-    times.append(time_temp)
-
-    movielens_robust_half, time_temp, size_coreset_array = k_GBGMM_compare_robust(index, k, movielens_complete)
-    np.save("results_2/movielens_half_robust.npy", movielens_robust_half)
-    times.append(time_temp)
-    all_size_coreset.append(size_coreset_array)
-
-    movielens_gmm_half, time_temp = k_GBGMM_compare_GMM(index, k, movielens_complete)
-    np.save("results_2/movielens_half_gmm.npy", movielens_gmm_half)
-    times.append(time_temp)
-
-    movielens_fault_half, time_temp = k_GBGMM_compare_fault(k, a, movielens_complete, movielens_edges)
-    np.save("results_2/movielens_half_fault.npy", movielens_fault_half)
+    CelebA_fault, time_temp = k_Greedy_compare_fault(k, a, CelebA_complete, CelebA_edges)
+    np.save("results_2/CelebA_lossMax_fault.npy", CelebA_fault)
     times.append(time_temp)
 
     times = np.array(times)
     all_size_coreset = np.array(all_size_coreset)
-    np.save("results_2/time_k_half_deletion.npy", times)
-    np.save("results_2/size_coreset_k_half_deletion.npy", all_size_coreset)
+    np.save("results_2/time_k_lossMax_deletion.npy", times)
+    np.save("results_2/size_coreset_k_lossMax_deletion.npy", all_size_coreset)
 
 if __name__ == "__main__":
     main()
