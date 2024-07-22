@@ -32,6 +32,9 @@ We select some important files for detailed description.
 |-- table_GBGMM.py # GBGMM Deletion for the table in the paper
 |-- table_WBGreedy.py #  WBGreedy Deletion for the table in the paper
 |-- table_WBNN.py # WBNN Deletion for the table in the paper
+|-- efficiency_GBGMM.py # code for obtaining the running time when k = 10 and z = 10
+|-- efficiency_WBGreedy.py # code for obtaining the running time when k = 10 and z = 10
+|-- efficiency_WBNN.py # code for obtaining the running time when k = 10 and z = 10
 ```
 
 ## Run our code
@@ -49,6 +52,9 @@ python fix_k_WBNN.py
 python table_GBGMM.py
 python table_WBGreedy.py
 python table_WBNN.py
+python efficiency_GBGMM.py
+python efficiency_WBGreedy.py
+python efficiency_WBNN.py
 ```
 
 
