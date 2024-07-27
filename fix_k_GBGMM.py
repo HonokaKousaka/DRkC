@@ -85,7 +85,7 @@ def loss(centerSet: np.ndarray, points_index: np.ndarray, complete:np.ndarray) -
     
     return max_distance
 
-def GB_deletion(z: int, complete: np.ndarray) -> np.ndarray:
+def GB_deletion(z: int, complete: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """
     Returns the left indexes and the deleted indexes after z-point deletion with GMM.
     Args: 
