@@ -53,5 +53,16 @@ python table_WBNN.py
 python efficiency.py
 ```
 
+## Citation
+If you have used the paper, please cite as:
+```python
+@inproceedings{li2024coresets,
+  title={Coresets for Deletion-Robust k-Center Clustering},
+  author={Li, Ruien and Wang, Yanhao and Mathioudakis, Michael},
+  booktitle={Proceedings of the 33rd ACM International Conference on Information and Knowledge Management},
+  pages={3877--3881},
+  year={2024}
+}
+```
 
 
