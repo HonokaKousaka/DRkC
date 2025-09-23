@@ -23,7 +23,7 @@ We select some important files for detailed description.
     |-- adult_edges.npy # the edges of Adult dataset in non-descending order
     |-- ...
 |-- original_dataset # 5 datasets, each with 1,000 elements
-    |-- adult.npy # Adult dataset with 1,000 dataset
+    |-- adult.npy # Adult dataset with 1,000 elements
     |-- ...
 |-- functions.py # all algorithm functions
 |-- fix_k_GBGMM.py # GBGMM Deletion with k fixed
