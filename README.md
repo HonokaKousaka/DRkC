@@ -54,7 +54,7 @@ python efficiency.py
 ```
 
 ## Citation
-If you have used the paper, please cite as:
+If you have used the paper, please give my repository a star, and cite as:
 ```python
 @inproceedings{li2024coresets,
   title={Coresets for Deletion-Robust k-Center Clustering},
