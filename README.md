@@ -1,6 +1,6 @@
 # Coresets for Deletion-Robust k-Center Clustering
 
-This is the official repository of the CIKM 2024 paper submission titled *Coresets for Deletion-Robust k-Center Clustering*.
+This is the official repository of the CIKM 2024 paper submission titled *Coresets for Deletion-Robust k-Center Clustering* ([Paper](https://dl.acm.org/doi/abs/10.1145/3627673.3679890)). 
 
 ## Setup
 
